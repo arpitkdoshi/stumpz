@@ -1,0 +1,108 @@
+'use server'
+
+import { TResponse, TSingleTournament } from '@/lib/types'
+import logger from '@/lib/logger'
+import { db } from '@/db'
+import { tournament } from '@/db/schema'
+import { desc, eq } from 'drizzle-orm'
+
+export async function createTournament(
+  data: Partial<TSingleTournament>,
+): Promise<TResponse> {
+  try {
+    const requestPayload = JSON.stringify(data)
+
+    // Basic validation
+    if (!data.name) {
+      const errorMessage = 'Validation failed: name is required'
+      logger.error({
+        action: 'createTournament',
+        requestPayload,
+        errorMessage,
+        timestamp: new Date().toISOString(),
+      })
+      return { data: null, success: false, error: errorMessage }
+    }
+
+    const response = await db
+      .insert(tournament)
+      .values({ name: data.name })
+      .returning({ id: tournament.id })
+
+    logger.info({
+      action: 'createTournament',
+      requestPayload,
+      responsePayload: JSON.stringify(response),
+      timestamp: new Date().toISOString(),
+    })
+
+    if (response.length > 0) {
+      return { data: response[0].id, success: true }
+    }
+    return { data: null, success: false, error: 'Unable to create tournament' }
+  } catch (error: any) {
+    console.log(error.message)
+    console.log(error.stack)
+    logger.error({
+      action: 'createTournament',
+      requestPayload: JSON.stringify(data),
+      errorMessage: error.message,
+      timestamp: new Date().toISOString(),
+    })
+    return { data: null, success: false, error: error.message }
+  }
+}
+
+export async function readTournament(id: string): Promise<TResponse> {
+  try {
+    // Basic validation
+    if (!id || id === '') {
+      const errorMessage = 'Validation failed: id is required'
+      logger.error({
+        action: 'readTournament',
+        requestPayload: id,
+        errorMessage,
+        timestamp: new Date().toISOString(),
+      })
+      return { data: null, success: false, error: errorMessage }
+    }
+    const response = await db
+      .select()
+      .from(tournament)
+      .where(eq(tournament.id, id))
+    if (response.length > 0) return { data: response[0].id, success: true }
+    else {
+      return { data: null, success: false, error: 'Unable to find tournament' }
+    }
+  } catch (error: any) {
+    console.log(error.message)
+    console.log(error.stack)
+    logger.error({
+      action: 'readTournament',
+      requestPayload: id,
+      errorMessage: error.message,
+      timestamp: new Date().toISOString(),
+    })
+    return { data: null, success: false, error: error.message }
+  }
+}
+
+export async function readAllTournaments(): Promise<TResponse> {
+  try {
+    const response = await db
+      .select()
+      .from(tournament)
+      .orderBy(desc(tournament.createdAt))
+    return { data: response, success: true, error: '' }
+  } catch (error: any) {
+    console.log(error.message)
+    console.log(error.stack)
+    logger.error({
+      action: 'readTournament',
+      requestPayload: '',
+      errorMessage: error.message,
+      timestamp: new Date().toISOString(),
+    })
+    return { data: null, success: false, error: error.message }
+  }
+}

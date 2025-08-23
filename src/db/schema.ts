@@ -1,6 +1,7 @@
 import { getNextId } from '@/lib/utils'
-import { relations } from 'drizzle-orm'
+import { InferSelectModel, relations } from 'drizzle-orm'
 import {
+  date,
   jsonb,
   numeric,
   pgEnum,
@@ -17,6 +18,14 @@ export const powerOverVal = [
 
 export const powerOverEnum = pgEnum('powerOverEnum', powerOverVal)
 
+export const auctionStatus = [
+  'Not Started',
+  'In Progress',
+  'Completed',
+] as const
+
+export const auctionStatusEnum = pgEnum('auctionStatusEnum', auctionStatus)
+
 export const tournament = pgTable('tournament', {
   id: text('id')
     .primaryKey()
@@ -27,7 +36,13 @@ export const tournament = pgTable('tournament', {
     .defaultNow()
     .$onUpdate(() => new Date()),
   name: text('name').notNull().unique(),
+  totalTeams: text('total_teams'),
+  playersPerTeam: text('players_per_team'),
+  numOfOvers: text('num_of_overs').default('0'),
+  date: date('date', { mode: 'date' }),
   powerOver: powerOverEnum('powerOver').notNull().default('In first x Overs'),
+  xOver: text('xOver'),
+  totalMatches: text('total_matches'),
 })
 
 export const tournamentRelations = relations(tournament, ({ one, many }) => ({
@@ -101,7 +116,7 @@ export const playerRelations = relations(player, ({ one, many }) => ({
     references: [team.id],
     relationName: 'relPlayerTeam',
   }),
-  currentPlayer: many(player, {
+  currentPlayer: many(auction, {
     relationName: 'relAuctionPlayer',
   }),
 }))
@@ -115,6 +130,7 @@ export const auction = pgTable('auction', {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
+  status: auctionStatusEnum('status').notNull().default('Not Started'),
   currentGroup: text('current_group'),
   pendingPlayers: jsonb('pending_players'),
   currentPlayerId: text('player_id').references(() => player.id, {
@@ -158,3 +174,5 @@ export const schema = {
   playerRelations,
   auctionRelations,
 }
+
+export type TAuction = InferSelectModel<typeof auction> & {}
