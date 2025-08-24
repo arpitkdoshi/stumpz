@@ -2,6 +2,7 @@ import { getNextId } from '@/lib/utils'
 import { InferSelectModel, relations } from 'drizzle-orm'
 import {
   date,
+  integer,
   jsonb,
   numeric,
   pgEnum,
@@ -17,6 +18,14 @@ export const powerOverVal = [
 ] as const
 
 export const powerOverEnum = pgEnum('powerOverEnum', powerOverVal)
+
+export const playerRoleVal = ['Batsman', 'Bowler', 'All-Rounder'] as const
+
+export const playerRoleEnum = pgEnum('playerRoleEnum', playerRoleVal)
+
+export const tShirtSizeVal = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'] as const
+
+export const tShirtSizeEnum = pgEnum('tShirtSizeEnum', tShirtSizeVal)
 
 export const auctionStatus = [
   'Not Started',
@@ -36,13 +45,15 @@ export const tournament = pgTable('tournament', {
     .defaultNow()
     .$onUpdate(() => new Date()),
   name: text('name').notNull().unique(),
-  totalTeams: text('total_teams'),
-  playersPerTeam: text('players_per_team'),
-  numOfOvers: text('num_of_overs').default('0'),
+  totalTeams: integer('total_teams'),
+  logo_url: text('logo_url'),
+  banner_url: text('banner_url'),
+  playersPerTeam: integer('players_per_team').default(0),
+  numOfOvers: integer('num_of_overs').default(0),
   date: date('date', { mode: 'date' }),
   powerOver: powerOverEnum('powerOver').notNull().default('In first x Overs'),
-  xOver: text('xOver'),
-  totalMatches: text('total_matches'),
+  xOver: integer('xOver').default(0),
+  totalMatches: integer('total_matches').default(0),
 })
 
 export const tournamentRelations = relations(tournament, ({ one, many }) => ({
@@ -98,6 +109,10 @@ export const player = pgTable('players', {
     .defaultNow()
     .$onUpdate(() => new Date()),
   name: text('name').notNull().unique(),
+  img_url: text('img_url'),
+  tShirtSize: tShirtSizeEnum('size').notNull().default('L'),
+  role: playerRoleEnum('role').notNull().default('Batsman'),
+  basePrice: integer('base_price'),
   group: text('group'),
   teamId: text('team_id').references(() => team.id, { onDelete: 'cascade' }),
   tournamentId: text('tournament_id')

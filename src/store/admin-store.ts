@@ -10,6 +10,8 @@ export type AdminActions = {
   setSelectedTournament: (selectedTournament: string) => void
   setTournaments: (tournaments: ComboboxOptions[]) => void
   addNewTournament: (tournament: ComboboxOptions) => void
+  updTournament: (lbl: string, val: string) => void
+  rmTournament: () => void
   setAdminStore: (val: Partial<AdminState>) => void
 }
 
@@ -38,6 +40,18 @@ export const createAdminStore = (iState: Partial<AdminState>) => {
     setSelectedTournament: (selectedTournament: string) =>
       set({ selectedTournament }),
     setTournaments: (tournaments: ComboboxOptions[]) => set({ tournaments }),
+    updTournament: (lbl: string, val: string) =>
+      set(({ tournaments }) => ({
+        tournaments: tournaments.map(t => {
+          if (t.value === val) return { label: lbl, value: val }
+          return t
+        }),
+      })),
+    rmTournament: () =>
+      set(({ tournaments, selectedTournament }) => ({
+        tournaments: tournaments.filter(s => s.value !== selectedTournament),
+        selectedTournament: '',
+      })),
     addNewTournament: (tournament: ComboboxOptions) =>
       set(({ tournaments }) => ({
         tournaments: [tournament, ...tournaments],

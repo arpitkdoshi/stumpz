@@ -70,7 +70,7 @@ export async function readTournament(id: string): Promise<TResponse> {
       .select()
       .from(tournament)
       .where(eq(tournament.id, id))
-    if (response.length > 0) return { data: response[0].id, success: true }
+    if (response.length > 0) return { data: response[0], success: true }
     else {
       return { data: null, success: false, error: 'Unable to find tournament' }
     }
@@ -100,6 +100,97 @@ export async function readAllTournaments(): Promise<TResponse> {
     logger.error({
       action: 'readTournament',
       requestPayload: '',
+      errorMessage: error.message,
+      timestamp: new Date().toISOString(),
+    })
+    return { data: null, success: false, error: error.message }
+  }
+}
+
+export async function updateTournament(data: Partial<TSingleTournament>) {
+  try {
+    const requestPayload = JSON.stringify(data)
+
+    if (!data.id) {
+      const errorMessage = 'Validation failed: Tournament ID is required'
+      logger.error({
+        action: 'updateTournament',
+        requestPayload,
+        errorMessage,
+        timestamp: new Date().toISOString(),
+      })
+      return { data: null, success: false, error: errorMessage }
+    }
+    // Simulate DB update (replace with actual DB call)
+    const response = await db
+      .update(tournament)
+      .set({
+        ...data,
+      })
+      .where(eq(tournament.id, data.id))
+      .returning({ id: tournament.id })
+
+    logger.info({
+      action: 'updateTournament',
+      requestPayload,
+      responsePayload: JSON.stringify(response),
+      timestamp: new Date().toISOString(),
+    })
+
+    if (response.length > 0) {
+      return { data: response[0].id, success: true }
+    }
+    return { data: null, success: false, error: 'Unable to update tournament' }
+  } catch (error: any) {
+    console.log(error.message)
+    console.log(error.stack)
+    logger.error({
+      action: 'updateTournament',
+      requestPayload: JSON.stringify(data),
+      errorMessage: error.message,
+      timestamp: new Date().toISOString(),
+    })
+    return { data: null, success: false, error: error.message }
+  }
+}
+
+export async function deleteTournament(id: string) {
+  try {
+    const requestPayload = JSON.stringify({ id })
+
+    if (!id) {
+      const errorMessage = 'Tournament ID is required for deletion'
+      logger.error({
+        action: 'deleteTournament',
+        requestPayload,
+        errorMessage,
+        timestamp: new Date().toISOString(),
+      })
+      return { data: null, success: false, error: errorMessage }
+    }
+
+    const response = await db
+      .delete(tournament)
+      .where(eq(tournament.id, id))
+      .returning({ id: tournament.id })
+
+    logger.info({
+      action: 'deleteTournament',
+      requestPayload,
+      responsePayload: JSON.stringify(response),
+      timestamp: new Date().toISOString(),
+    })
+
+    if (response.length > 0) {
+      return { data: response[0].id, success: true }
+    }
+    return { data: null, success: false, error: 'Unable to delete tournament' }
+  } catch (error: any) {
+    console.log(error.message)
+    console.log(error.stack)
+    logger.error({
+      action: 'deleteTournament',
+      requestPayload: JSON.stringify({ id }),
       errorMessage: error.message,
       timestamp: new Date().toISOString(),
     })

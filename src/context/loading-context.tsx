@@ -1,6 +1,7 @@
 // context/LoadingContext.tsx
 'use client'
 import React, { createContext, ReactNode, useContext, useState } from 'react'
+import Image from 'next/image'
 
 type LoadingContextType = {
   isLoading: boolean
@@ -21,7 +22,12 @@ export const LoadingProvider = ({ children }: { children: ReactNode }) => {
             'absolute top-0 left-0 bg-white h-screen w-full flex justify-center items-center z-[12]'
           }
         >
-          <div className='loader'></div>
+          <Image
+            src={'/images/loading.gif'}
+            alt={'Loading'}
+            width={200}
+            height={200}
+          />
         </div>
       )}
     </LoadingContext.Provider>

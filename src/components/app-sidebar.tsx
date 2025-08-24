@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { Frame, PieChart } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Contact, Frame, Group, PieChart, Sliders } from 'lucide-react'
 
 import { NavMain } from '@/components/nav-main'
 import { NavProjects } from '@/components/nav-projects'
@@ -19,23 +20,24 @@ import { useAdminStore } from '@/providers/admin-store-provider'
 import { Combobox } from '@/components/ui/combobox'
 import { createTournament } from '@/actions/tournament'
 import { toast } from 'sonner'
+import { getNextId } from '@/lib/utils'
 
 const data = {
   navMain: [
     {
       title: 'Settings',
       url: '/admin/tournament',
-      icon: Frame,
+      icon: Sliders,
     },
     {
-      title: 'Team',
-      url: '/admin/team',
-      icon: Frame,
+      title: 'Teams',
+      url: '/admin/teams',
+      icon: Group,
     },
     {
-      title: 'Player',
-      url: '/admin/player',
-      icon: Frame,
+      title: 'Players',
+      url: '/admin/players',
+      icon: Contact,
     },
   ],
   projects: [
@@ -59,6 +61,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     setSelectedTournament,
     addNewTournament,
   } = useAdminStore(store => store)
+  const [k, setK] = useState('')
   const addTournament = async (name: string) => {
     const resp = await createTournament({ name })
     if (resp && resp.success) {
@@ -69,6 +72,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       toast.error('Something went wrong!\nError creating Tournament')
     }
   }
+  useEffect(() => {
+    setK(getNextId())
+  }, [tournaments])
 
   return (
     <Sidebar variant='inset' {...props}>
@@ -97,6 +103,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <div className='mt-4 mx-2'>
           <Combobox
+            key={k}
             options={tournaments}
             placeholder='Select a tournament'
             selected={selectedTournament}

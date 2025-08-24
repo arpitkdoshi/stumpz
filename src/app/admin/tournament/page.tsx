@@ -1,11 +1,45 @@
 'use client'
 
-import React from 'react'
-import ImageUploadCrop from '@/components/image-upload-crop'
+import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '@/providers/admin-store-provider'
+import TournamentForm from '@/app/admin/tournament/components/tournament-form'
+import { TSingleTournament } from '@/lib/types'
+import { deleteTournament, readTournament } from '@/actions/tournament'
+import { useLoading } from '@/context/loading-context'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+import { getNextId } from '@/lib/utils'
 
 const TournamentPage = () => {
-  const { selectedTournament } = useAdminStore(store => store)
+  const { selectedTournament, rmTournament } = useAdminStore(store => store)
+  const { setLoading } = useLoading()
+  const [tournament, setTournament] = useState<TSingleTournament | null>(null)
+  const [key, setKey] = useState('')
+  const getTournament = async (id: string) => {
+    const resp = await readTournament(id)
+    if (resp.success) {
+      const r = resp.data as TSingleTournament
+      setKey(getNextId())
+      setTournament(r)
+    }
+  }
+  useEffect(() => {
+    if (selectedTournament !== '') {
+      setLoading(true)
+      getTournament(selectedTournament).then(() => setLoading(false))
+    }
+  }, [selectedTournament])
   if (selectedTournament === '') {
     return (
       <div
@@ -20,12 +54,47 @@ const TournamentPage = () => {
       </div>
     )
   }
+  if (!tournament) return null
   return (
-    <div className={' w-full max-w-4xl mx-auto'}>
-      <h2 className={'font-bold text-xl mb-4'}>Tournament Settings</h2>
-      <ImageUploadCrop cropShape={'round'} onChange={v => console.log(v)} />
-      <ImageUploadCrop cropShape={'rectangle'} onChange={v => console.log(v)} />
-      <ImageUploadCrop cropShape={'square'} onChange={v => console.log(v)} />
+    <div className={' w-full container mx-auto px-10'}>
+      <div className='flex w-full justify-between items-center mb-4'>
+        <h2 className={'font-bold text-xl'}>Tournament Settings</h2>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant='destructive'>Delete</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the
+                tournament and related data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>No</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  setLoading(true)
+                  const resp = await deleteTournament(selectedTournament)
+                  if (resp.success) {
+                    toast.success(`${tournament.name} deleted successfully.`)
+                    rmTournament()
+                    setLoading(false)
+                  } else {
+                    toast.error(
+                      'Something went wrong! Unable to delete the tournament',
+                    )
+                  }
+                }}
+              >
+                Yes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+      <TournamentForm tournament={tournament} key={key} />
     </div>
   )
 }
