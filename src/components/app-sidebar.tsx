@@ -57,8 +57,8 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const {
     tournaments,
-    selectedTournament,
-    setSelectedTournament,
+    selectedTournamentId,
+    setSelectedTournamentId,
     addNewTournament,
   } = useAdminStore(store => store)
   const [k, setK] = useState('')
@@ -106,13 +106,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             key={k}
             options={tournaments}
             placeholder='Select a tournament'
-            selected={selectedTournament}
-            onChange={v => setSelectedTournament(v.value)}
+            selected={selectedTournamentId}
+            onChange={v => setSelectedTournamentId(v.value)}
             onCreate={name => {
               addTournament(name).then()
             }}
           />
-          {selectedTournament !== '' && (
+          {selectedTournamentId !== '' && (
             <>
               <NavMain items={data.navMain} />
               <NavProjects projects={data.projects} />

@@ -5,6 +5,44 @@ import logger from '@/lib/logger'
 import { db } from '@/db'
 import { tournament } from '@/db/schema'
 import { desc, eq } from 'drizzle-orm'
+import path from 'path'
+import fsSync, { promises as fs } from 'fs'
+
+type TDel = 'logo' | 'banner' | 'both'
+
+async function delOldTournamentImage(id: string, toDel: TDel) {
+  const r = await db
+    .select({ img_url: tournament.logo_url, bImg: tournament.banner_url })
+    .from(tournament)
+    .where(eq(tournament.id, id))
+
+  if (
+    r &&
+    r.length === 1 &&
+    r[0].img_url &&
+    r[0].img_url !== '' &&
+    (toDel === 'logo' || toDel === 'both')
+  ) {
+    const oldArr = r[0].img_url.split('/')
+    const oldPath = path.join(process.cwd(), 'public', ...oldArr)
+    if (fsSync.existsSync(oldPath)) {
+      await fs.rm(oldPath)
+    }
+  }
+  if (
+    r &&
+    r.length === 1 &&
+    r[0].bImg &&
+    r[0].bImg !== '' &&
+    (toDel === 'banner' || toDel === 'both')
+  ) {
+    const oldArr = r[0].bImg.split('/')
+    const oldPath = path.join(process.cwd(), 'public', ...oldArr)
+    if (fsSync.existsSync(oldPath)) {
+      await fs.rm(oldPath)
+    }
+  }
+}
 
 export async function createTournament(
   data: Partial<TSingleTournament>,
@@ -121,6 +159,20 @@ export async function updateTournament(data: Partial<TSingleTournament>) {
       })
       return { data: null, success: false, error: errorMessage }
     }
+    let toDel: TDel | '' = ''
+    if (data.logo_url && data.logo_url !== '') {
+      toDel = 'logo'
+    }
+    if (data.banner_url && data.banner_url !== '') {
+      if (toDel === 'logo') {
+        toDel = 'both'
+      } else {
+        toDel = 'banner'
+      }
+    }
+    if (toDel !== '') {
+      await delOldTournamentImage(data.id, toDel)
+    }
     // Simulate DB update (replace with actual DB call)
     const response = await db
       .update(tournament)
@@ -168,7 +220,7 @@ export async function deleteTournament(id: string) {
       })
       return { data: null, success: false, error: errorMessage }
     }
-
+    await delOldTournamentImage(id, 'both')
     const response = await db
       .delete(tournament)
       .where(eq(tournament.id, id))

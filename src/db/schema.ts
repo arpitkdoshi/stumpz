@@ -80,6 +80,9 @@ export const team = pgTable('team', {
     .defaultNow()
     .$onUpdate(() => new Date()),
   name: text('name').notNull().unique(),
+  logo_url: text('logo_url'),
+  tShirtColor: text('tshirt_color'),
+  ownerName: text('owner_name'),
   tournamentId: text('tournament_id')
     .notNull()
     .references(() => tournament.id, { onDelete: 'cascade' }),

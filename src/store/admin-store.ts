@@ -2,12 +2,12 @@ import { createStore } from 'zustand/vanilla'
 import { ComboboxOptions } from '@/components/ui/combobox'
 
 export type AdminState = {
-  selectedTournament: string
+  selectedTournamentId: string
   tournaments: ComboboxOptions[]
 }
 
 export type AdminActions = {
-  setSelectedTournament: (selectedTournament: string) => void
+  setSelectedTournamentId: (selectedTournamentId: string) => void
   setTournaments: (tournaments: ComboboxOptions[]) => void
   addNewTournament: (tournament: ComboboxOptions) => void
   updTournament: (lbl: string, val: string) => void
@@ -18,7 +18,7 @@ export type AdminActions = {
 export type AdminStore = AdminState & AdminActions
 
 const initialState: AdminState = {
-  selectedTournament: '',
+  selectedTournamentId: '',
   tournaments: [],
 }
 
@@ -37,8 +37,8 @@ export const createAdminStore = (iState: Partial<AdminState>) => {
   }
   return createStore<AdminStore>()(set => ({
     ...initState,
-    setSelectedTournament: (selectedTournament: string) =>
-      set({ selectedTournament }),
+    setSelectedTournamentId: (selectedTournamentId: string) =>
+      set({ selectedTournamentId }),
     setTournaments: (tournaments: ComboboxOptions[]) => set({ tournaments }),
     updTournament: (lbl: string, val: string) =>
       set(({ tournaments }) => ({
@@ -48,14 +48,14 @@ export const createAdminStore = (iState: Partial<AdminState>) => {
         }),
       })),
     rmTournament: () =>
-      set(({ tournaments, selectedTournament }) => ({
-        tournaments: tournaments.filter(s => s.value !== selectedTournament),
-        selectedTournament: '',
+      set(({ tournaments, selectedTournamentId }) => ({
+        tournaments: tournaments.filter(s => s.value !== selectedTournamentId),
+        selectedTournamentId: '',
       })),
     addNewTournament: (tournament: ComboboxOptions) =>
       set(({ tournaments }) => ({
         tournaments: [tournament, ...tournaments],
-        selectedTournament: tournament.value,
+        selectedTournamentId: tournament.value,
       })),
     setAdminStore: (val: Partial<AdminState>) => set({ ...val }),
   }))

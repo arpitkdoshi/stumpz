@@ -22,7 +22,7 @@ import { toast } from 'sonner'
 import { getNextId } from '@/lib/utils'
 
 const TournamentPage = () => {
-  const { selectedTournament, rmTournament } = useAdminStore(store => store)
+  const { selectedTournamentId, rmTournament } = useAdminStore(store => store)
   const { setLoading } = useLoading()
   const [tournament, setTournament] = useState<TSingleTournament | null>(null)
   const [key, setKey] = useState('')
@@ -35,12 +35,12 @@ const TournamentPage = () => {
     }
   }
   useEffect(() => {
-    if (selectedTournament !== '') {
+    if (selectedTournamentId !== '') {
       setLoading(true)
-      getTournament(selectedTournament).then(() => setLoading(false))
+      getTournament(selectedTournamentId).then(() => setLoading(false))
     }
-  }, [selectedTournament])
-  if (selectedTournament === '') {
+  }, [selectedTournamentId])
+  if (selectedTournamentId === '') {
     return (
       <div
         className={
@@ -76,7 +76,7 @@ const TournamentPage = () => {
               <AlertDialogAction
                 onClick={async () => {
                   setLoading(true)
-                  const resp = await deleteTournament(selectedTournament)
+                  const resp = await deleteTournament(selectedTournamentId)
                   if (resp.success) {
                     toast.success(`${tournament.name} deleted successfully.`)
                     rmTournament()
