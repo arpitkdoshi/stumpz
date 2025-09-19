@@ -40,3 +40,13 @@ export function getDirtyValues<T extends Record<string, any>>(
     return { ...prev, [key]: isArray ? values[key] : nestedValue }
   }, {} as Partial<T>)
 }
+
+type FacetCounts = { [value: string]: number }
+
+export function getFacetObject<T>(array: T[], key: keyof T): FacetCounts {
+  return array.reduce((acc: FacetCounts, item) => {
+    const value = String(item[key])
+    acc[value] = (acc[value] || 0) + 1
+    return acc
+  }, {})
+}

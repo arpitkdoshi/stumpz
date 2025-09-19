@@ -42,9 +42,11 @@ export default function PlayerForm({
   player,
   updateUIPlayerAction,
   onCancelAction,
+  groups,
 }: {
   player: Partial<TSinglePlayer> | null
   updateUIPlayerAction: (id: string, isNew: boolean) => void
+  groups: string[]
   onCancelAction: () => void
 }) {
   const { setLoading } = useLoading()
@@ -245,7 +247,7 @@ export default function PlayerForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(s => (
+                        {groups.map(s => (
                           <SelectItem value={s} key={s}>
                             {s}
                           </SelectItem>

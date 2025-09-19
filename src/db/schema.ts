@@ -1,10 +1,10 @@
 import { getNextId } from '@/lib/utils'
-import { InferSelectModel, relations } from 'drizzle-orm'
+import { relations } from 'drizzle-orm'
 import {
+  AnyPgColumn,
   date,
   integer,
   jsonb,
-  numeric,
   pgEnum,
   pgTable,
   text,
@@ -30,10 +30,39 @@ export const tShirtSizeEnum = pgEnum('tShirtSizeEnum', tShirtSizeVal)
 export const auctionStatus = [
   'Not Started',
   'In Progress',
+  'Paused',
   'Completed',
 ] as const
 
 export const auctionStatusEnum = pgEnum('auctionStatusEnum', auctionStatus)
+
+export type AuctionStatusValues = (typeof auctionStatusEnum.enumValues)[number]
+
+export const changeKey = [
+  'INIT',
+  'STATUS_CHANGE',
+  'GROUP_CHANGE',
+  'PLAYER_CHANGE',
+] as const
+
+export const changeKeyEnum = pgEnum('changeKeyEnum', changeKey)
+
+export type ChangeKeyValues = (typeof changeKeyEnum.enumValues)[number]
+
+export type TournamentOtherSettings = {
+  groups: string[]
+  tShirtColors: Record<string, string>[]
+}
+
+export type TAuctionMeta = {
+  currentGroup: string
+  totalPlayers: number
+  soldPlayers: number
+  currentBid: number
+  currentBidTeam: { name: ''; img_url: ''; id: '' }
+  currentPlayer: { name: string; img_url: string; role: string; id: string }
+  historyOfBids: { bidAmount: number; team: string }[]
+}
 
 export const tournament = pgTable('tournament', {
   id: text('id')
@@ -54,6 +83,13 @@ export const tournament = pgTable('tournament', {
   powerOver: powerOverEnum('powerOver').notNull().default('In first x Overs'),
   xOver: integer('xOver').default(0),
   totalMatches: integer('total_matches').default(0),
+  otherSettings: jsonb('other_settings').$type<TournamentOtherSettings>(),
+  currentAuctionId: text('current_auction_id').references(
+    (): AnyPgColumn => auction.id,
+    {
+      onDelete: 'set null',
+    },
+  ),
 })
 
 export const tournamentRelations = relations(tournament, ({ one, many }) => ({
@@ -65,6 +101,11 @@ export const tournamentRelations = relations(tournament, ({ one, many }) => ({
   }),
   auctions: many(auction, {
     relationName: 'relAuctionTournament',
+  }),
+  currentAuction: one(auction, {
+    fields: [tournament.currentAuctionId],
+    references: [auction.id],
+    relationName: 'relCurrentAuctionTournament',
   }),
 }))
 
@@ -96,9 +137,6 @@ export const teamRelations = relations(team, ({ one, many }) => ({
   }),
   players: many(player, {
     relationName: 'relPlayerTeam',
-  }),
-  currentBidTeam: many(auction, {
-    relationName: 'relAuctionTeam',
   }),
 }))
 
@@ -134,9 +172,6 @@ export const playerRelations = relations(player, ({ one, many }) => ({
     references: [team.id],
     relationName: 'relPlayerTeam',
   }),
-  currentPlayer: many(auction, {
-    relationName: 'relAuctionPlayer',
-  }),
 }))
 
 export const auction = pgTable('auction', {
@@ -148,17 +183,9 @@ export const auction = pgTable('auction', {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
+  changeKey: changeKeyEnum('change_key').notNull().default('INIT'),
   status: auctionStatusEnum('status').notNull().default('Not Started'),
-  currentGroup: text('current_group'),
-  pendingPlayers: jsonb('pending_players'),
-  currentPlayerId: text('player_id').references(() => player.id, {
-    onDelete: 'set null',
-  }),
-  basePrice: numeric('base_price'),
-  currentBid: numeric('current_bid'),
-  currentBidTeamId: text('team_id').references(() => team.id, {
-    onDelete: 'set null',
-  }),
+  auctionMeta: jsonb('auction_Meta').$type<TAuctionMeta>(),
   tournamentId: text('tournament_id')
     .notNull()
     .references(() => tournament.id, { onDelete: 'cascade' }),
@@ -169,16 +196,6 @@ export const auctionRelations = relations(auction, ({ one, many }) => ({
     fields: [auction.tournamentId],
     references: [tournament.id],
     relationName: 'relAuctionTournament',
-  }),
-  currentBidTeam: one(team, {
-    fields: [auction.currentBidTeamId],
-    references: [team.id],
-    relationName: 'relAuctionTeam',
-  }),
-  currentPlayer: one(player, {
-    fields: [auction.currentPlayerId],
-    references: [player.id],
-    relationName: 'relAuctionPlayer',
   }),
 }))
 
@@ -192,5 +209,3 @@ export const schema = {
   playerRelations,
   auctionRelations,
 }
-
-export type TAuction = InferSelectModel<typeof auction> & {}

@@ -21,6 +21,7 @@ import { Combobox } from '@/components/ui/combobox'
 import { createTournament } from '@/actions/tournament'
 import { toast } from 'sonner'
 import { getNextId } from '@/lib/utils'
+import { NavOthers } from '@/components/nav-other'
 
 const data = {
   navMain: [
@@ -52,6 +53,7 @@ const data = {
       icon: PieChart,
     },
   ],
+  other: [],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -116,6 +118,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <>
               <NavMain items={data.navMain} />
               <NavProjects projects={data.projects} />
+              <NavOthers others={data.other} />
             </>
           )}
         </div>

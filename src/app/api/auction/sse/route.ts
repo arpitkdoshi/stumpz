@@ -1,8 +1,15 @@
 // app/api/auction/sse/route.ts
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
-import { auction, TAuction } from '@/db/schema'
-import { and, eq } from 'drizzle-orm' // drizzle instance + schema import
+import { auction, tournament } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { TSingleAuction, TSingleTournament } from '@/lib/types' // drizzle instance + schema import
+
+export type Response = {
+  payload: TSingleAuction & {
+    tournament: TSingleTournament
+  }
+}
 
 export async function GET(req: Request) {
   // Extract tournamentId from the URL query parameters
@@ -19,20 +26,15 @@ export async function GET(req: Request) {
   const stream = new ReadableStream({
     async start(controller) {
       while (true) {
-        const auc = await db
-          .select()
-          .from(auction)
-          .where(
-            and(
-              eq(auction.tournamentId, tournamentId),
-              eq(auction.id, auctionId),
-            ),
-          ) // drizzle query
-        let data: TAuction | null = null
-        if (auc.length > 0) {
-          data = auc[0]
-        }
-        controller.enqueue(`data: ${data ? JSON.stringify(data) : null}\n\n`)
+        const t = await db.query.auction.findFirst({
+          where: eq(auction.id, auctionId),
+          with: {
+            tournament: true,
+          },
+        })
+        const toResp: Response = { payload: t! }
+
+        controller.enqueue(`data: ${JSON.stringify(toResp)}\n\n`)
         await new Promise(res => setTimeout(res, 2000)) // 2s poll interval
       }
     },

@@ -1,9 +1,10 @@
 import { InferSelectModel } from 'drizzle-orm'
-import { player, team, tournament } from '@/db/schema'
+import { auction, player, team, tournament } from '@/db/schema'
 
 export type TSingleTournament = InferSelectModel<typeof tournament>
 export type TSingleTeam = InferSelectModel<typeof team>
 export type TSinglePlayer = InferSelectModel<typeof player>
+export type TSingleAuction = InferSelectModel<typeof auction>
 
 export type TReturnType =
   | string
@@ -13,6 +14,8 @@ export type TReturnType =
   | TSingleTeam
   | TSinglePlayer[]
   | TSinglePlayer
+  | TSingleAuction
+  | TSingleAuction[]
   | null
 
 export type TResponse = {

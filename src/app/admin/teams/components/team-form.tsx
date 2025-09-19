@@ -20,7 +20,13 @@ import { useLoading } from '@/context/loading-context'
 import { toast } from 'sonner'
 import { UploadSingleFile } from '@/components/file-upload'
 import { useAdminStore } from '@/providers/admin-store-provider'
-import { AdvancedColorPicker } from '@/components/ui/color-picker'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const formSchema = z.object({
   name: z.string().min(1, { error: 'Team name is required' }),
@@ -33,11 +39,18 @@ export default function TeamForm({
   team,
   updateUITeamAction,
   onCancelAction,
+  tShirtColors,
+  // selectedTShirtColors,
 }: {
   team: Partial<TSingleTeam> | null
-  updateUITeamAction: (id: string, isNew: boolean) => void
+  updateUITeamAction: (id: string, isNew: boolean, oTshirtClr: string) => void
   onCancelAction: () => void
+  tShirtColors: Record<string, string>[]
+  // selectedTShirtColors: string[]
 }) {
+  // const [oldTShirtColor, setOldTShirtColor] = useState(
+  //   team && team.tShirtColor ? team.tShirtColor : '',
+  // )
   const { setLoading } = useLoading()
   const { selectedTournamentId } = useAdminStore(store => store)
   const form = useForm<z.infer<typeof formSchema>>({
@@ -58,7 +71,7 @@ export default function TeamForm({
       const resp = await updateTeam({ id: team.id, ...v })
       if (resp.success) {
         toast.success('Team details saved!')
-        updateUITeamAction(team.id!, false)
+        updateUITeamAction(team.id!, false, '') //oldTShirtColor
       } else {
         toast.error('Something wen wrong, unable to update the team details')
       }
@@ -69,7 +82,7 @@ export default function TeamForm({
         const resp = await createTeam({ ...v })
         if (resp.success) {
           const id = resp.data as string
-          updateUITeamAction(id, true)
+          updateUITeamAction(id, true, '') //oldTShirtColor
           toast.success('Team created successfully!')
         } else {
           toast.error('Something went wrong, unable to create the team')
@@ -146,6 +159,29 @@ export default function TeamForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>T-Shirt Color</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className={'w-full'}>
+                        <SelectValue placeholder='Select T-Shirt Color' />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {tShirtColors &&
+                        tShirtColors.map(t => {
+                          const k = Object.keys(t)[0]
+                          // if (
+                          //   selectedTShirtColors.includes(t[k]) &&
+                          //   field.value !== t[k]
+                          // )
+                          //   return null
+                          return (
+                            <SelectItem value={t[k]} key={t[k]}>
+                              {k}
+                            </SelectItem>
+                          )
+                        })}
+                    </SelectContent>
+                  </Select>
                   {/*<Popover>*/}
                   {/*  <PopoverTrigger asChild>*/}
                   {/*    <button*/}
@@ -182,10 +218,10 @@ export default function TeamForm({
                   {/*    </FormControl>*/}
                   {/*  </PopoverContent>*/}
                   {/*</Popover>*/}
-                  <AdvancedColorPicker
-                    color={field.value}
-                    onChange={field.onChange}
-                  />
+                  {/*<AdvancedColorPicker*/}
+                  {/*  color={field.value}*/}
+                  {/*  onChange={field.onChange}*/}
+                  {/*/>*/}
                   <FormMessage />
                 </FormItem>
               )}

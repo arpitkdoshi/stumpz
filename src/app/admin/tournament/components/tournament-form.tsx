@@ -36,6 +36,10 @@ import { useLoading } from '@/context/loading-context'
 import { toast } from 'sonner'
 import { UploadSingleFile } from '@/components/file-upload'
 import { useAdminStore } from '@/providers/admin-store-provider'
+import Editor from 'react-simple-code-editor'
+import * as prismjs from 'prismjs/components/prism-core'
+import 'prismjs/components/prism-clike'
+import 'prismjs/components/prism-json'
 
 const formSchema = z.object({
   logo: z.string(),
@@ -47,6 +51,7 @@ const formSchema = z.object({
   numOfOvers: z.number(),
   powerOver: z.string().min(1, { error: 'Select the Power Over Type' }),
   xOver: z.number(),
+  otherSettings: z.string(),
 })
 
 export default function TournamentForm({
@@ -68,6 +73,9 @@ export default function TournamentForm({
       numOfOvers: tournament.numOfOvers ? tournament.numOfOvers : 0,
       powerOver: tournament.powerOver ? tournament.powerOver : '',
       xOver: tournament.xOver ? tournament.xOver : 0,
+      otherSettings: tournament.otherSettings
+        ? JSON.stringify(tournament.otherSettings, null, 2)
+        : '{}',
     },
   })
   // useEffect(() => {
@@ -108,13 +116,16 @@ export default function TournamentForm({
     // }
     setLoading(true)
     const d = getDirtyValues(form.formState.dirtyFields, form.getValues())
-    const { name, logo, banner, ...rest } = d
+    const { name, logo, banner, otherSettings, ...rest } = d
     const v = { ...rest } as Partial<TSingleTournament>
     if (logo) v['logo_url'] = logo
     if (banner) v['banner_url'] = banner
     if (name) {
       updTournament(name, tournament.id)
       v['name'] = name
+    }
+    if (otherSettings) {
+      v['otherSettings'] = JSON.parse(otherSettings)
     }
     const resp = await updateTournament({ id: tournament.id, ...v })
     if (resp.success) {
@@ -197,7 +208,7 @@ export default function TournamentForm({
         </div>
 
         <div className='grid grid-cols-12 gap-4'>
-          <div className='col-span-12 md:col-span-6 lg:col-span-4'>
+          <div className='col-span-12 md:col-span-6 lg:col-span-3'>
             <FormField
               control={form.control}
               name='name'
@@ -217,8 +228,7 @@ export default function TournamentForm({
               )}
             />
           </div>
-
-          <div className='col-span-12 md:col-span-6 lg:col-span-4'>
+          <div className='col-span-12 md:col-span-6 lg:col-span-3'>
             <FormField
               control={form.control}
               name='date'
@@ -258,10 +268,7 @@ export default function TournamentForm({
               )}
             />
           </div>
-        </div>
-
-        <div className='grid grid-cols-12 gap-4'>
-          <div className='col-span-12 md:col-span-6 lg:col-span-4'>
+          <div className='col-span-12 md:col-span-6 lg:col-span-2'>
             <FormField
               control={form.control}
               name='totalTeams'
@@ -285,8 +292,7 @@ export default function TournamentForm({
               )}
             />
           </div>
-
-          <div className='col-span-12 md:col-span-6 lg:col-span-4'>
+          <div className='col-span-12 md:col-span-6 lg:col-span-2'>
             <FormField
               control={form.control}
               name='playersPerTeam'
@@ -310,8 +316,7 @@ export default function TournamentForm({
               )}
             />
           </div>
-
-          <div className='col-span-12 md:col-span-6 lg:col-span-4'>
+          <div className='col-span-12 md:col-span-6 lg:col-span-2'>
             <FormField
               control={form.control}
               name='numOfOvers'
@@ -335,10 +340,7 @@ export default function TournamentForm({
               )}
             />
           </div>
-        </div>
-
-        <div className='grid grid-cols-12 gap-4'>
-          <div className='col-span-12 md:col-span-6 lg:col-span-4'>
+          <div className='col-span-12 md:col-span-6 lg:col-span-3'>
             <FormField
               control={form.control}
               name='powerOver'
@@ -366,8 +368,7 @@ export default function TournamentForm({
               }}
             />
           </div>
-
-          <div className='col-span-12 md:col-span-6 lg:col-span-4'>
+          <div className='col-span-12 md:col-span-6 lg:col-span-2'>
             <FormField
               control={form.control}
               name='xOver'
@@ -382,6 +383,54 @@ export default function TournamentForm({
                       onChange={event => {
                         // Manually convert the string value to a number
                         field.onChange(parseInt(event.target.value))
+                      }}
+                    />
+                  </FormControl>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className='col-span-12 md:col-span-6 lg:col-span-6'>
+            <FormField
+              control={form.control}
+              name='otherSettings'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Other Settings</FormLabel>
+                  <FormControl>
+                    {/*<Textarea*/}
+                    {/*  placeholder='Other Settings'*/}
+                    {/*  className={'!text-xs'}*/}
+                    {/*  {...field}*/}
+                    {/*/>*/}
+                    {/*<CodeEditor*/}
+                    {/*  cursor*/}
+                    {/*  className='w-[640px] h-[480px]'*/}
+                    {/*  lang='json'*/}
+                    {/*  title='otherSettings.json'*/}
+                    {/*  icon={<Code />}*/}
+                    {/*  duration={15}*/}
+                    {/*  delay={0.5}*/}
+                    {/*  copyButton*/}
+                    {/*>*/}
+                    {/*  {field.value}*/}
+                    {/*</CodeEditor>*/}
+                    <Editor
+                      value={field.value || ''}
+                      onValueChange={field.onChange}
+                      highlight={code =>
+                        prismjs.highlight(code, prismjs.languages.json)
+                      } // Adjust language
+                      padding={10}
+                      style={{
+                        fontFamily: '"Fira code", "Fira Mono", monospace',
+                        fontSize: 14,
+                        maxHeight: 400,
+                        overflow: 'auto',
+                        border: '1px solid hsl(214.3 31.6% 91.4%)', // Shadcn border color
+                        borderRadius: '0.375rem', // Shadcn border radius
                       }}
                     />
                   </FormControl>

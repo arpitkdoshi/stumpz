@@ -10,16 +10,13 @@ import {
 } from '@/actions/player'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  ComboOption,
-  MultiSelectComboBox,
-} from '@/components/ui/multiselect-combobox'
+import { ComboOption } from '@/components/ui/multiselect-combobox'
 import { PlusCircle, Trash2 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import PlayerForm from '@/app/admin/players/components/player-form'
 import { playerRoleVal } from '@/db/schema'
 import { toast } from 'sonner'
-import { getNextId } from '@/lib/utils'
+import { getFacetObject, getNextId } from '@/lib/utils'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +29,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { readTournament } from '@/actions/tournament'
+import { FacetedFilter } from '@/components/ui/faceted-filter'
 
 // Role Options Array
 const roleOptions: ComboOption[] = playerRoleVal.map(r => ({
@@ -43,6 +41,7 @@ export default function PlayersPage() {
   const [search, setSearch] = React.useState('')
   const [k, setK] = useState('')
   const [selectedRoles, setSelectedRoles] = React.useState<string[]>([])
+  const [selectedGroups, setSelectedGroups] = React.useState<string[]>([])
   const [tournament, setTournament] = useState<TSingleTournament | null>(null)
   const [selectedPlayer, setSelectedPlayer] =
     React.useState<TSinglePlayer | null>(null)
@@ -53,7 +52,9 @@ export default function PlayersPage() {
         const matchesName = p.name!.toLowerCase().includes(search.toLowerCase())
         const matchesRole =
           selectedRoles.length === 0 || selectedRoles.includes(p.role!)
-        return matchesName && matchesRole
+        const matchedGroup =
+          selectedGroups.length === 0 || selectedGroups.includes(p.group!)
+        return matchesName && matchesRole && matchedGroup
       })
     : []
 
@@ -163,12 +164,28 @@ export default function PlayersPage() {
             className={'w-fit mt-auto'}
             onChange={e => setSearch(e.target.value)}
           />
-          <MultiSelectComboBox
+          <FacetedFilter
+            onValueChange={values => setSelectedRoles(values)}
+            values={selectedRoles}
+            classNames={'mt-auto'}
+            title={'Filter by Role...'}
             options={roleOptions}
-            selected={selectedRoles}
-            onChange={r => {
-              setSelectedRoles(r)
-            }}
+            facets={getFacetObject<TSinglePlayer>(players, 'role')}
+          />
+          <FacetedFilter
+            onValueChange={values => setSelectedGroups(values)}
+            values={selectedGroups}
+            classNames={'mt-auto'}
+            title={'Filter by Groups...'}
+            options={
+              tournament.otherSettings
+                ? tournament.otherSettings.groups.map(g => ({
+                    label: g,
+                    value: g,
+                  }))
+                : []
+            }
+            facets={getFacetObject<TSinglePlayer>(players, 'group')}
           />
         </div>
         <>
@@ -180,6 +197,11 @@ export default function PlayersPage() {
                   setSelectedPlayer(null)
                 }}
                 player={null}
+                groups={
+                  tournament && tournament.otherSettings
+                    ? tournament.otherSettings.groups
+                    : []
+                }
                 updateUIPlayerAction={handleChangeInSelected}
               />
             </div>
@@ -277,6 +299,11 @@ export default function PlayersPage() {
                       {selectedPlayer ? (
                         <PlayerForm
                           key={k}
+                          groups={
+                            tournament && tournament.otherSettings
+                              ? tournament.otherSettings.groups
+                              : []
+                          }
                           onCancelAction={() => setSelectedPlayer(null)}
                           player={selectedPlayer}
                           updateUIPlayerAction={handleChangeInSelected}

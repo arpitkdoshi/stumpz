@@ -38,6 +38,7 @@ export default function TeamsPage() {
     null,
   )
   const [tournament, setTournament] = useState<TSingleTournament | null>(null)
+  // const [selectedColors, setSelectedColors] = useState<string[]>([])
   const [isNewUI, setIsNewUI] = React.useState(false)
   const [teams, setTeams] = useState<TSingleTeam[] | null>(null)
   const filtered = teams
@@ -57,6 +58,14 @@ export default function TeamsPage() {
     if (resp.success) {
       const r = resp.data as TSingleTeam[]
       setTeams(r)
+      // setSelectedColors(
+      //   r
+      //     .map(t => {
+      //       if ('tShirtColor' in t && t.tShirtColor) return t.tShirtColor
+      //       return ''
+      //     })
+      //     .filter(i => i !== ''),
+      // )
     }
     const r1 = await readTournament(tournamentId)
     if (r1.success) {
@@ -75,6 +84,64 @@ export default function TeamsPage() {
     if (selectedTeam) setK(getNextId())
   }, [selectedTeam])
 
+  async function handleChangeInSelected(
+    id: string,
+    isNew: boolean,
+    oldTShirtColor: string,
+  ) {
+    setLoading(true)
+    const resp = await readTeam(id)
+    if (resp.success) {
+      const n = resp.data as TSingleTeam
+      if (isNew) {
+        setTeams(prev => {
+          if (prev) {
+            const s = prev as TSingleTeam[]
+            return [
+              n,
+              ...s.filter(
+                i =>
+                  oldTShirtColor !== '' &&
+                  'tShirtColor' in i &&
+                  i.tShirtColor &&
+                  i.tShirtColor !== oldTShirtColor,
+              ),
+            ]
+          }
+          return [n]
+        })
+
+        setIsNewUI(false)
+      } else {
+        setTeams(prev => {
+          if (prev) {
+            return prev.map(t => {
+              if (t.id === n.id) return n
+              return t
+            })
+          }
+          return [n]
+        })
+      }
+      setSelectedTeam(n)
+      // if ('tShirtColor' in n && n.tShirtColor && n.tShirtColor !== '') {
+      //   setSelectedColors(p => {
+      //     if (p) {
+      //       const k = p as string[]
+      //       return [
+      //         n.tShirtColor!,
+      //         ...k.filter(i => oldTShirtColor !== '' && i !== oldTShirtColor),
+      //       ]
+      //     }
+      //     return [n.tShirtColor!]
+      //   })
+      // }
+    } else {
+      toast.error('Something went wrong!, Unable to get new Team')
+    }
+    setLoading(false)
+  }
+
   if (selectedTournamentId === '') {
     return (
       <div
@@ -89,39 +156,6 @@ export default function TeamsPage() {
       </div>
     )
   }
-
-  async function handleChangeInSelected(id: string, isNew: boolean) {
-    setLoading(true)
-    const resp = await readTeam(id)
-    if (resp.success) {
-      const n = resp.data as TSingleTeam
-      if (isNew) {
-        setTeams(prev => {
-          if (prev) {
-            const s = prev as TSingleTeam[]
-            return [n, ...s]
-          }
-          return [n]
-        })
-        setIsNewUI(false)
-        setSelectedTeam(n)
-      } else {
-        setTeams(prev => {
-          if (prev) {
-            return prev.map(t => {
-              if (t.id === n.id) return n
-              return t
-            })
-          }
-          return [n]
-        })
-      }
-    } else {
-      toast.error('Something went wrong!, Unable to get new Team')
-    }
-    setLoading(false)
-  }
-
   if (!teams || !tournament) return null
   return (
     <div>
@@ -167,10 +201,16 @@ export default function TeamsPage() {
           {isNewUI ? (
             <div className={'col-span-3'}>
               <TeamForm
+                // selectedTShirtColors={selectedColors}
                 onCancelAction={() => {
                   setIsNewUI(false)
                   setSelectedTeam(null)
                 }}
+                tShirtColors={
+                  tournament.otherSettings
+                    ? tournament.otherSettings.tShirtColors
+                    : []
+                }
                 team={null}
                 updateUITeamAction={handleChangeInSelected}
               />
@@ -274,8 +314,14 @@ export default function TeamsPage() {
                       {selectedTeam ? (
                         <TeamForm
                           key={k}
+                          // selectedTShirtColors={selectedColors}
                           onCancelAction={() => setSelectedTeam(null)}
                           team={selectedTeam}
+                          tShirtColors={
+                            tournament.otherSettings
+                              ? tournament.otherSettings.tShirtColors
+                              : []
+                          }
                           updateUITeamAction={handleChangeInSelected}
                         />
                       ) : (
